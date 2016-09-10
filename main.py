@@ -18,8 +18,13 @@ def read_file():
     return username, password, save_path
 
 
+class AuthError(Exception):
+    def __init__(self, value):
+        self.value = value
+
+
 class Ucas(object):
-    username, password, save_base_path = read_file()  # TODO 文件夹都不存在一路创建
+    username, password, save_base_path = read_file()
 
     def __init__(self, processor=4):
         self.__BEAUTIFULSOUPPARSE = 'html5lib'  # or use 'lxml'
@@ -46,7 +51,10 @@ class Ucas(object):
             "pwd": self.password,
             "sb": "sb"
         }
-        self.session.post(url, data=post_data, headers=self.headers)
+        html = self.session.post(url, data=post_data, headers=self.headers).text
+        result = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('div', class_='alert alert-error')
+        if result:
+            raise AuthError('用户名或者密码错误')
 
     def get_course_page(self):
         # 从sep中获取Identity Key来登录课程系统，并获取课程信息
@@ -78,8 +86,6 @@ class Ucas(object):
         base_url = 'http://course.ucas.ac.cn/access/content/group/'
         urls = [base_url + x.split('/')[-1] + '/' for x in self.course_list]
         list(map(self.__get_resource_url, urls))
-        # for x, y in self.to_download:
-        #     print(x, y)
 
     def __get_resource_url(self, base_url, source_name=None):
         html = self.session.get(base_url, headers=self.headers).text
@@ -113,9 +119,11 @@ class Ucas(object):
         dic_name, url = param
 
         filename = url.split('/')[-1]
-        _path = url[46:].split('/')[1:-1]
-
-        sub_directory = '/'.join(_path) + '/'
+        if url.startswith('http://course.ucas.ac.cn/access/content/'):
+            _path = url[46:].split('/')[1:-1]
+            sub_directory = '/'.join(_path) + '/'
+        else:
+            sub_directory = ''
         save_path = self.save_base_path + '/' + dic_name + '/' + sub_directory
 
         r = self.session.get(url, stream=True)
@@ -132,13 +140,15 @@ class Ucas(object):
             print('{dic_name}  >> {sub_directory}{filename}   Download success'.format(**locals()))
 
     def start(self):
-        # try:
-        self.__login_sep()
-        self.__parse_course_list()
-        self.__get_all_resource_url()
-        self.__start_download()
-        # except Exception as e:
-        #     print('-----------------', e)
+        try:
+            self.__login_sep()
+            self.__parse_course_list()
+            self.__get_all_resource_url()
+            self.__start_download()
+        except AuthError as e:
+            print(e, '请检查private文件')
+        except Exception as e:
+            print('-----------------', e)
 
 
 if __name__ == '__main__':
