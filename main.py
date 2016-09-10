@@ -21,7 +21,7 @@ class Ucas(object):
     username, password, save_base_path = read_file()  # TODO 文件夹都不存在一路创建
 
     def __init__(self, processor=4):
-        self.__BEAUTIFULSOUPPARSE = 'lxml' if os.name == 'nt' else 'html5lib'
+        self.__BEAUTIFULSOUPPARSE = 'lxml'  # or use 'html5lib'
         self.session = requests.session()
         self.headers = {
             "Host": "sep.ucas.ac.cn",
@@ -75,7 +75,6 @@ class Ucas(object):
         # 从课程的所有URL中获取对应的所有课件
         print('读取课件中......')
         list(map(self.get_resource_url, self.course_list))
-
 
     def get_resource_url(self, url):
         base_url = 'http://course.ucas.ac.cn/access/content/group/' + url.split('/')[-1]
