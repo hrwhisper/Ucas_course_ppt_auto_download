@@ -5,9 +5,10 @@ import codecs
 import re
 import os
 from datetime import datetime
+from multiprocessing.dummy import Pool
+import urllib.parse
 import requests
 from bs4 import BeautifulSoup
-from multiprocessing.dummy import Pool
 
 
 def read_file():
@@ -65,80 +66,83 @@ class Ucas(object):
         html = self.session.get(url, headers=self.headers).text
         return html
 
-    def parse_course_list(self):
+    def __parse_course_list(self):
         # 获取课程的所有URL
         html = self.get_course_page()
         self.course_list = ['http://course.ucas.ac.cn/portal/site/' + x for x in
                             re.findall(r'http://course.ucas.ac.cn/portal/site/([\S]+)"', html)]
 
-    def get_all_resource_url(self):
+    def __get_all_resource_url(self):
         # 从课程的所有URL中获取对应的所有课件
         print('读取课件中......')
-        list(map(self.get_resource_url, self.course_list))
+        base_url = 'http://course.ucas.ac.cn/access/content/group/'
+        urls = [base_url + x.split('/')[-1] + '/' for x in self.course_list]
+        list(map(self.__get_resource_url, urls))
+        # for x, y in self.to_download:
+        #     print(x, y)
 
-    def get_resource_url(self, url):
-        base_url = 'http://course.ucas.ac.cn/access/content/group/' + url.split('/')[-1]
-        html = self.session.get(url, headers=self.headers).text
-        url = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('a', class_='icon-sakai-resources')['href']
-        html = self.session.get(url, headers=self.headers).text
-        url = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('iframe')['src']
-        html = self.session.get(url, headers=self.headers).text
+    def __get_resource_url(self, base_url, source_name=None):
+        html = self.session.get(base_url, headers=self.headers).text
+        res = set()
+        urls = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find_all('a')
+        if not source_name:
+            source_name = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('h2').text
 
-        filenames = set(re.findall(r'{base_url}/([\S]+)"'.format(**locals()), html))
-        source_url = list(map(lambda x: base_url + '/' + x, filenames))
-        source_name = \
-            BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('div', class_='breadCrumb specialLink').h3.text.split()[
-                1]
+        for url in urls:
+            url = urllib.parse.unquote(url['href'])
+            if url == '../': continue
+            if url.find('.') == -1:  # directory
+                self.__get_resource_url(base_url + url, source_name)
+            if url.startswith('http:__'):  # Fix can't download when given a web link. eg: 计算机算法分析与设计
+                res.add(self.session.get(base_url + url, headers=self.headers).url)
+            else:
+                res.add(base_url + url)
 
-        for filename in filenames:
-            url = base_url + '/' + filename
-            if filename.startswith('http:__'):  # Fix can't download when given a web link. eg: 计算机算法分析与设计
-                url = self.session.get(url, headers=self.headers).url
+        for url in res:
             self.to_download.append((source_name, url))
 
-    def start_download(self):
+    def __start_download(self):
         # 多线程下载
         p = Pool(self.max_processor)
-        p.map(self.download_file, self.to_download)
+        p.map(self.__download_file, self.to_download)
         p.close()
         p.join()
 
-    def download_file(self, param):
+    def __download_file(self, param):
         # 下载文件
         dic_name, url = param
-        save_path = self.save_base_path + '/' + dic_name
 
         filename = url.split('/')[-1]
+        _path = url[46:].split('/')[1:-1]
+
+        sub_directory = '/'.join(_path) + '/'
+        save_path = self.save_base_path + '/' + dic_name + '/' + sub_directory
+
         r = self.session.get(url, stream=True)
-        save_path = save_path + '/' + filename
+        if not os.path.exists(save_path):  # To create directory
+            os.makedirs(save_path)
+
+        save_path += '/' + filename
         if not os.path.exists(save_path):  # To prevent download exists files
             with open(save_path, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=1024):
                     if chunk:  # filter out keep-alive new chunks
                         f.write(chunk)
                         f.flush()
-            print('{dic_name} >> {filename}    Download success'.format(**locals()))
-
-    def __create_directory(self):
-        # 创建相应目录
-        for dic_name, _ in self.to_download:
-            save_path = self.save_base_path + '/' + dic_name
-            if not os.path.exists(save_path):  # check if the dic
-                os.mkdir(save_path)
+            print('{dic_name}  >> {sub_directory}{filename}   Download success'.format(**locals()))
 
     def start(self):
-        try:
-            self.__login_sep()
-            self.parse_course_list()
-            self.get_all_resource_url()
-            self.__create_directory()
-            self.start_download()
-        except Exception as e:
-            print('-----------------', e)
+        # try:
+        self.__login_sep()
+        self.__parse_course_list()
+        self.__get_all_resource_url()
+        self.__start_download()
+        # except Exception as e:
+        #     print('-----------------', e)
 
 
 if __name__ == '__main__':
     start = datetime.now()
     s = Ucas()
     s.start()
-    print('download complete, total time:', datetime.now() - start)
+    print('Task complete, total time:', datetime.now() - start)
