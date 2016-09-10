@@ -21,7 +21,7 @@ class Ucas(object):
     username, password, save_base_path = read_file()  # TODO 文件夹都不存在一路创建
 
     def __init__(self, processor=4):
-        self.__BEAUTIFULSOUPPARSE = 'lxml'  # or use 'html5lib'
+        self.__BEAUTIFULSOUPPARSE = 'html5lib'  # or use 'lxml'
         self.session = requests.session()
         self.headers = {
             "Host": "sep.ucas.ac.cn",
