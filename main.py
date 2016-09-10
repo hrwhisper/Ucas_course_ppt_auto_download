@@ -21,7 +21,7 @@ class Ucas(object):
     username, password, save_base_path = read_file()  # TODO 文件夹都不存在一路创建
 
     def __init__(self, processor=4):
-        self.__BEAUTIFULSOUPPARSE = 'lxml'
+        self.__BEAUTIFULSOUPPARSE = 'lxml' if os.name == 'nt' else 'html5lib'
         self.session = requests.session()
         self.headers = {
             "Host": "sep.ucas.ac.cn",
@@ -38,6 +38,7 @@ class Ucas(object):
 
     def __login_sep(self):
         # 登录sep
+        print('Login....')
         url = "http://sep.ucas.ac.cn/slogin"
         post_data = {
             "userName": self.username,
@@ -75,6 +76,7 @@ class Ucas(object):
         print('读取课件中......')
         list(map(self.get_resource_url, self.course_list))
 
+
     def get_resource_url(self, url):
         base_url = 'http://course.ucas.ac.cn/access/content/group/' + url.split('/')[-1]
         html = self.session.get(url, headers=self.headers).text
@@ -83,13 +85,16 @@ class Ucas(object):
         url = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('iframe')['src']
         html = self.session.get(url, headers=self.headers).text
 
-        filename = set(re.findall(r'{base_url}/([\S]+)"'.format(**locals()), html))
-        source_url = list(map(lambda x: base_url + '/' + x, filename))
+        filenames = set(re.findall(r'{base_url}/([\S]+)"'.format(**locals()), html))
+        source_url = list(map(lambda x: base_url + '/' + x, filenames))
         source_name = \
             BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('div', class_='breadCrumb specialLink').h3.text.split()[
                 1]
 
-        for url in source_url:
+        for filename in filenames:
+            url = base_url + '/' + filename
+            if filename.startswith('http:__'):  # Fix can't download when given a web link. eg: 计算机算法分析与设计
+                url = self.session.get(url, headers=self.headers).url
             self.to_download.append((source_name, url))
 
     def start_download(self):
@@ -130,7 +135,7 @@ class Ucas(object):
             self.__create_directory()
             self.start_download()
         except Exception as e:
-            print('!!!!!!!!!!!!!!!!!!', e)
+            print('-----------------', e)
 
 
 if __name__ == '__main__':
