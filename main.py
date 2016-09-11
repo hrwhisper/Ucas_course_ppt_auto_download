@@ -18,11 +18,6 @@ def read_file():
     return username, password, save_path
 
 
-class AuthError(Exception):
-    def __init__(self, value):
-        self.value = value
-
-
 class Ucas(object):
     username, password, save_base_path = read_file()
 
@@ -40,7 +35,6 @@ class Ucas(object):
         }
         self.course_list = []
         self.to_download = []
-        self.max_processor = processor
 
     def __login_sep(self):
         # 登录sep
@@ -53,8 +47,7 @@ class Ucas(object):
         }
         html = self.session.post(url, data=post_data, headers=self.headers).text
         result = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('div', class_='alert alert-error')
-        if result:
-            raise AuthError('用户名或者密码错误')
+        if result: raise ValueError('用户名或者密码错误')
 
     def get_course_page(self):
         # 从sep中获取Identity Key来登录课程系统，并获取课程信息
@@ -87,51 +80,46 @@ class Ucas(object):
         urls = [base_url + x.split('/')[-1] + '/' for x in self.course_list]
         list(map(self.__get_resource_url, urls))
 
-    def __get_resource_url(self, base_url, source_name=None):
+    def __get_resource_url(self, base_url, _path='', source_name=None):
         html = self.session.get(base_url, headers=self.headers).text
-        res = set()
         urls = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find_all('a')
         if not source_name:
             source_name = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('h2').text
-
+        res = set()
         for url in urls:
             url = urllib.parse.unquote(url['href'])
             if url == '../': continue
             if url.find('.') == -1:  # directory
-                self.__get_resource_url(base_url + url, source_name)
+                self.__get_resource_url(base_url + url, _path + '/' + url, source_name)
             if url.startswith('http:__'):  # Fix can't download when given a web link. eg: 计算机算法分析与设计
-                res.add(self.session.get(base_url + url, headers=self.headers).url)
+                res.add((self.session.get(base_url + url, headers=self.headers).url, _path))
             else:
-                res.add(base_url + url)
+                res.add((base_url + url, _path))
 
-        for url in res:
-            self.to_download.append((source_name, url))
+        for url, _path in res:
+            self.to_download.append((source_name, _path, url))
 
     def __start_download(self):
         # 多线程下载
-        p = Pool(self.max_processor)
+        p = Pool()
         p.map(self.__download_file, self.to_download)
         p.close()
         p.join()
 
     def __download_file(self, param):
         # 下载文件
-        dic_name, url = param
+        dic_name, sub_directory, url = param
+        save_path = self.save_base_path + '/' + dic_name + '/' + sub_directory
+        if not os.path.exists(save_path):  # To create directory
+            try:
+                os.makedirs(save_path)
+            except FileExistsError as e:
+                pass
 
         filename = url.split('/')[-1]
-        if url.startswith('http://course.ucas.ac.cn/access/content/'):
-            _path = url[46:].split('/')[1:-1]
-            sub_directory = '/'.join(_path) + '/'
-        else:
-            sub_directory = ''
-        save_path = self.save_base_path + '/' + dic_name + '/' + sub_directory
-
-        r = self.session.get(url, stream=True)
-        if not os.path.exists(save_path):  # To create directory
-            os.makedirs(save_path)
-
         save_path += '/' + filename
         if not os.path.exists(save_path):  # To prevent download exists files
+            r = self.session.get(url, stream=True)
             with open(save_path, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=1024):
                     if chunk:  # filter out keep-alive new chunks
@@ -145,10 +133,8 @@ class Ucas(object):
             self.__parse_course_list()
             self.__get_all_resource_url()
             self.__start_download()
-        except AuthError as e:
+        except ValueError as e:
             print(e, '请检查private文件')
-        except Exception as e:
-            print('-----------------', e)
 
 
 if __name__ == '__main__':
