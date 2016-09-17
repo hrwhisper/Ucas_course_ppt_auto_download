@@ -8,9 +8,17 @@
 
 修改easy_use/private文件，然后运行main.exe即可
 
+#### 环境要求
+需要下载安装 python 3.5.2 https://www.python.org/ftp/python/3.5.2/python-3.5.2.exe
+
 ### 高级用户
 
 修改根目录的private文件，然后python main.py即可。
+
+#### 环境要求
+- python 3.5.2
+- requests 2.11
+- BeautifulSoup
 
 ### private文件说明
 
@@ -22,13 +30,8 @@ private中，各行表示意义如下：
 
 
 
-## 环境说明
-- python 3.5.2
-- requests 2.11
-- BeautifulSoup
-- 使用 cx-Freeze 打包成exe
-
 ## 更新说明
+- 使用 cx-Freeze 打包成exe
 - 修复课件名称含有空格导致解析失败问题
 - 修复课件里文件夹没有遍历下载的问题
 - 修复部分课程给出链接后下载失效(如计算机算法设计与分析,老师给出两个链接)

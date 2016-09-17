@@ -4,8 +4,9 @@
 import codecs
 import re
 import os
-from datetime import datetime
+import multiprocessing
 from multiprocessing.dummy import Pool
+from datetime import datetime
 import urllib.parse
 import requests
 from bs4 import BeautifulSoup
@@ -21,7 +22,7 @@ def read_file():
 class Ucas(object):
     username, password, save_base_path = read_file()
 
-    def __init__(self, processor=4):
+    def __init__(self):
         self.__BEAUTIFULSOUPPARSE = 'html5lib'  # or use 'lxml'
         self.session = requests.session()
         self.headers = {
@@ -35,6 +36,7 @@ class Ucas(object):
         }
         self.course_list = []
         self.to_download = []
+        self.lock = multiprocessing.Lock()
 
     def __login_sep(self):
         # 登录sep
@@ -102,7 +104,7 @@ class Ucas(object):
     def __start_download(self):
         # 多线程下载
         p = Pool()
-        p.map(self.__download_file, self.to_download)
+        p.map(self.__download_file,self.to_download)
         p.close()
         p.join()
 
@@ -110,11 +112,10 @@ class Ucas(object):
         # 下载文件
         dic_name, sub_directory, url = param
         save_path = self.save_base_path + '/' + dic_name + '/' + sub_directory
-        if not os.path.exists(save_path):  # To create directory
-            try:
+        if self.lock.acquire():
+            if not os.path.exists(save_path):  # To create directory
                 os.makedirs(save_path)
-            except FileExistsError as e:
-                pass
+            self.lock.release()
 
         filename = url.split('/')[-1]
         save_path += '/' + filename
