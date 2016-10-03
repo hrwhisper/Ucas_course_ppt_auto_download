@@ -38,7 +38,7 @@ class Ucas(object):
         self.to_download = []
         self.lock = multiprocessing.Lock()
 
-    def __login_sep(self):
+    def _login_sep(self):
         # 登录sep
         print('Login....')
         url = "http://sep.ucas.ac.cn/slogin"
@@ -51,7 +51,7 @@ class Ucas(object):
         result = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('div', class_='alert alert-error')
         if result: raise ValueError('用户名或者密码错误')
 
-    def get_course_page(self):
+    def _get_course_page(self):
         # 从sep中获取Identity Key来登录课程系统，并获取课程信息
         url = "http://sep.ucas.ac.cn/portal/site/16/801"
         r = self.session.get(url, headers=self.headers)
@@ -69,30 +69,32 @@ class Ucas(object):
         html = self.session.get(url, headers=self.headers).text
         return html
 
-    def __parse_course_list(self):
+    def _parse_course_list(self):
         # 获取课程的所有URL
-        html = self.get_course_page()
+        html = self._get_course_page()
         self.course_list = ['http://course.ucas.ac.cn/portal/site/' + x for x in
                             re.findall(r'http://course.ucas.ac.cn/portal/site/([\S]+)"', html)]
 
-    def __get_all_resource_url(self):
+    def _get_all_resource_url(self):
         # 从课程的所有URL中获取对应的所有课件
         print('读取课件中......')
         base_url = 'http://course.ucas.ac.cn/access/content/group/'
         urls = [base_url + x.split('/')[-1] + '/' for x in self.course_list]
-        list(map(self.__get_resource_url, urls))
+        list(map(self._get_resource_url, urls))
 
-    def __get_resource_url(self, base_url, _path='', source_name=None):
+    def _get_resource_url(self, base_url, _path='', source_name=None):
         html = self.session.get(base_url, headers=self.headers).text
-        urls = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find_all('a')
+        tds = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find_all('td')
         if not source_name:
             source_name = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('h2').text
         res = set()
-        for url in urls:
+        for td in tds:
+            url = td.find('a')
+            if not url: continue
             url = urllib.parse.unquote(url['href'])
             if url == '../': continue
-            if url.find('.') == -1:  # directory
-                self.__get_resource_url(base_url + url, _path + '/' + url, source_name)
+            if 'Folder' in td.text:  # directory
+                self._get_resource_url(base_url + url, _path + '/' + url, source_name)
             if url.startswith('http:__'):  # Fix can't download when given a web link. eg: 计算机算法分析与设计
                 res.add((self.session.get(base_url + url, headers=self.headers).url, _path))
             else:
@@ -101,14 +103,14 @@ class Ucas(object):
         for url, _path in res:
             self.to_download.append((source_name, _path, url))
 
-    def __start_download(self):
+    def _start_download(self):
         # 多线程下载
         p = Pool()
-        p.map(self.__download_file,self.to_download)
+        p.map(self._download_file, self.to_download)
         p.close()
         p.join()
 
-    def __download_file(self, param):
+    def _download_file(self, param):
         # 下载文件
         dic_name, sub_directory, url = param
         save_path = self.save_base_path + '/' + dic_name + '/' + sub_directory
@@ -132,10 +134,10 @@ class Ucas(object):
 
     def start(self):
         try:
-            self.__login_sep()
-            self.__parse_course_list()
-            self.__get_all_resource_url()
-            self.__start_download()
+            self._login_sep()
+            self._parse_course_list()
+            self._get_all_resource_url()
+            self._start_download()
         except ValueError as e:
             print(e, '请检查private文件')
 
