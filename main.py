@@ -121,6 +121,8 @@ class Ucas(object):
         save_path += '/' + filename
         if not os.path.exists(save_path):  # To prevent download exists files
             r = self.session.get(url, stream=True)
+            size_mb = int(r.headers.get('Content-Length')) / (1024 ** 2)
+            print('Start download {dic_name}  >> {sub_directory}{filename}  {size_mb:.2f}MB'.format(**locals()))
             with open(save_path, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=1024):
                     if chunk:  # filter out keep-alive new chunks
