@@ -22,7 +22,7 @@ def read_file():
 class Ucas(object):
     username, password, save_base_path = read_file()
 
-    def __init__(self):
+    def __init__(self, time_out=10):
         self.__BEAUTIFULSOUPPARSE = 'html5lib'  # or use 'lxml'
         self.session = requests.session()
         self.headers = {
@@ -37,6 +37,7 @@ class Ucas(object):
         self.course_list = []
         self.to_download = []
         self.lock = multiprocessing.Lock()
+        self._time_out = time_out
 
     def _login_sep(self):
         # 登录sep
@@ -96,7 +97,10 @@ class Ucas(object):
             if 'Folder' in td.text:  # directory
                 self._get_resource_url(base_url + url, _path + '/' + url, source_name)
             if url.startswith('http:__'):  # Fix can't download when given a web link. eg: 计算机算法分析与设计
-                res.add((self.session.get(base_url + url, headers=self.headers).url, _path))
+                try:
+                    res.add((self.session.get(base_url + url, headers=self.headers, timeout=self._time_out).url, _path))
+                except requests.exceptions.ReadTimeout:
+                    print("Error-----------: ", base_url + url, "添加进下载路径失败,服务器长时间无响应")
             else:
                 res.add((base_url + url, _path))
 
@@ -122,7 +126,10 @@ class Ucas(object):
         filename = url.split('/')[-1]
         save_path += '/' + filename
         if not os.path.exists(save_path):  # To prevent download exists files
-            r = self.session.get(url, stream=True)
+            try:
+                r = self.session.get(url, stream=True, timeout=self._time_out)
+            except requests.exceptions.ReadTimeout as e:
+                print('Error-----------文件下载失败,服务器长时间无响应: ', save_path)
             size_mb = int(r.headers.get('Content-Length')) / (1024 ** 2)
             print('Start download {dic_name}  >> {sub_directory}{filename}  {size_mb:.2f}MB'.format(**locals()))
             with open(save_path, 'wb') as f:
@@ -147,3 +154,4 @@ if __name__ == '__main__':
     s = Ucas()
     s.start()
     print('Task complete, total time:', datetime.now() - start)
+    os.system("pause")
