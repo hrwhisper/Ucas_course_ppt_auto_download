@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Date    : 2016/9/9
 # @Author  : hrwhisper
-import codecs
 import re
 import os
 import multiprocessing
@@ -10,47 +9,20 @@ from datetime import datetime
 import urllib.parse
 import requests
 from bs4 import BeautifulSoup
+from LoginUCAS import LoginUCAS
 
 
-def read_file():
-    with codecs.open(r'./private', "r", "utf-8") as f:
-        res = f.read().split("\n")
-        username, password, save_path = res
-    return username, password, save_path
-
-
-class Ucas(object):
-    username, password, save_base_path = read_file()
-
-    def __init__(self, time_out=10):
+class UCASCourse(object):
+    def __init__(self, time_out=5):
+        t = LoginUCAS().login_sep()
         self.__BEAUTIFULSOUPPARSE = 'html5lib'  # or use 'lxml'
-        self.session = requests.session()
-        self.headers = {
-            "Host": "sep.ucas.ac.cn",
-            "Connection": "keep-alive",
-            "Upgrade-Insecure-Requests": "1",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-            "Accept-Encoding": "gzip, deflate, sdch",
-            "Accept-Language": "zh-CN,zh;q=0.8,en-US;q=0.6,en;q=0.4",
-        }
+        self.save_base_path = t.save_base_path
+        self.session = t.session
+        self.headers = t.headers
         self.course_list = []
         self.to_download = []
         self.lock = multiprocessing.Lock()
         self._time_out = time_out
-
-    def _login_sep(self):
-        # 登录sep
-        print('Login....')
-        url = "http://sep.ucas.ac.cn/slogin"
-        post_data = {
-            "userName": self.username,
-            "pwd": self.password,
-            "sb": "sb"
-        }
-        html = self.session.post(url, data=post_data, headers=self.headers).text
-        result = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('div', class_='alert alert-error')
-        if result: raise ValueError('用户名或者密码错误')
 
     def _get_course_page(self):
         # 从sep中获取Identity Key来登录课程系统，并获取课程信息
@@ -101,6 +73,8 @@ class Ucas(object):
                     res.add((self.session.get(base_url + url, headers=self.headers, timeout=self._time_out).url, _path))
                 except requests.exceptions.ReadTimeout:
                     print("Error-----------: ", base_url + url, "添加进下载路径失败,服务器长时间无响应")
+                except requests.exceptions.ConnectionError as e:
+                    print("Error-----------: ", base_url + url, "添加进下载路径失败,服务器长时间无响应")
             else:
                 res.add((base_url + url, _path))
 
@@ -130,6 +104,9 @@ class Ucas(object):
                 r = self.session.get(url, stream=True, timeout=self._time_out)
             except requests.exceptions.ReadTimeout as e:
                 print('Error-----------文件下载失败,服务器长时间无响应: ', save_path)
+            except requests.exceptions.ConnectionError as e:
+                print('Error-----------文件下载失败,服务器长时间无响应: ', save_path)
+
             size_mb = int(r.headers.get('Content-Length')) / (1024 ** 2)
             print('Start download {dic_name}  >> {sub_directory}{filename}  {size_mb:.2f}MB'.format(**locals()))
             with open(save_path, 'wb') as f:
@@ -141,7 +118,6 @@ class Ucas(object):
 
     def start(self):
         try:
-            self._login_sep()
             self._parse_course_list()
             self._get_all_resource_url()
             self._start_download()
@@ -151,7 +127,7 @@ class Ucas(object):
 
 if __name__ == '__main__':
     start = datetime.now()
-    s = Ucas()
+    s = UCASCourse()
     s.start()
     print('Task complete, total time:', datetime.now() - start)
     os.system("pause")

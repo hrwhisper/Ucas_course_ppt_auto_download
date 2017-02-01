@@ -1,5 +1,21 @@
 #UCAS 课件自动下载
 
+##环境要求
+
+- python 3.5.2
+- requests 2.11
+- BeautifulSoup
+- Tesseract-OCR
+
+### 安装方法
+- pip install beautifulsoup4
+- pip install requests
+- Tesseract-OCR
+  - windows下安装：http://digi.bib.uni-mannheim.de/tesseract/tesseract-ocr-setup-3.05.00dev.exe
+    - 安装时候勾选Registry settings
+  - Linux  \  MAC OS X安装见 https://github.com/tesseract-ocr/tesseract/wiki
+
+
 ## 使用方法
 
 两种使用方法。
@@ -14,11 +30,6 @@
 ### 高级用户
 
 修改根目录的private文件，然后python main.py即可。
-
-#### 环境要求
-- python 3.5.2
-- requests 2.11
-- BeautifulSoup
 
 ### private文件说明
 
