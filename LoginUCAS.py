@@ -2,10 +2,10 @@
 # @Date    : 2017/2/1
 # @Author  : hrwhisper
 import codecs
-import multiprocessing
 import time
 from MyOCR import image_to_string
 import requests
+
 
 def read_file():
     with codecs.open(r'./private', "r", "utf-8") as f:
@@ -17,7 +17,7 @@ def read_file():
 class LoginUCAS(object):
     username, password, save_base_path = read_file()
 
-    def __init__(self, time_out=10, vercode_save_name='certCode2.jpg'):
+    def __init__(self, vercode_save_name='certCode.jpg'):
         self.cnt = 0
         self.__BEAUTIFULSOUPPARSE = 'html5lib'  # or use 'lxml'
         self.session = requests.session()
@@ -30,10 +30,6 @@ class LoginUCAS(object):
             "Accept-Encoding": "gzip, deflate, sdch",
             "Accept-Language": "zh-CN,zh;q=0.8,en-US;q=0.6,en;q=0.4",
         }
-        self.course_list = []
-        self.to_download = []
-        self.lock = multiprocessing.Lock()
-        self._time_out = time_out
         self.vercode_save_name = vercode_save_name
 
     def _download_verification_code(self):
@@ -51,7 +47,7 @@ class LoginUCAS(object):
             print('Login....')
         url = "http://sep.ucas.ac.cn/slogin"
         cert_code = image_to_string(self._download_verification_code())
-        while not cert_code:
+        while not cert_code or len(cert_code) < 4:
             cert_code = image_to_string(self._download_verification_code())
         post_data = {
             "userName": self.username,
@@ -64,7 +60,7 @@ class LoginUCAS(object):
         if html.find('密码错误') != -1:
             raise ValueError('用户名或者密码错误')
         elif html.find('验证码错误') != -1:
-            time.sleep(0.2)
+            time.sleep(2)
             self.cnt += 1
             return self.login_sep()
         print("登录成功 {}".format(self.cnt))
@@ -73,5 +69,11 @@ class LoginUCAS(object):
 
 if __name__ == '__main__':
     pass
-    # UcasLogin = LoginUCAS()
-    # UcasLogin.login_sep()
+    # total = 0
+    # test_num = 50
+    # for i in range(test_num):
+    #     UcasLogin = LoginUCAS()
+    #     UcasLogin.login_sep()
+    #     total += UcasLogin.cnt
+    #     print(i, total, '\n------------\n')
+    # print(total, total / test_num)

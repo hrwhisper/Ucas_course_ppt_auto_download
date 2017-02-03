@@ -6,10 +6,12 @@
 - requests 2.11
 - BeautifulSoup
 - Tesseract-OCR
+- PIL
 
 ### 安装方法
 - pip install beautifulsoup4
 - pip install requests
+- pip install Pillow
 - Tesseract-OCR
   - windows下安装：http://digi.bib.uni-mannheim.de/tesseract/tesseract-ocr-setup-3.05.00dev.exe
     - 安装时候勾选Registry settings
