@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date    : 2016/9/9
 # @Author  : hrwhisper
+import codecs
 import re
 import os
 import multiprocessing
@@ -14,15 +15,29 @@ from LoginUCAS import LoginUCAS
 
 class UCASCourse(object):
     def __init__(self, time_out=5):
-        t = LoginUCAS().login_sep()
         self.__BEAUTIFULSOUPPARSE = 'html5lib'  # or use 'lxml'
-        self.save_base_path = t.save_base_path
-        self.session = t.session
-        self.headers = t.headers
+        self.save_base_path = UCASCourse._read_info_from_file()
+        self.session = None
+        self.headers = None
+        self._init_session()
         self.course_list = []
         self.to_download = []
         self.lock = multiprocessing.Lock()
         self._time_out = time_out
+
+    def _init_session(self):
+        t = LoginUCAS().login_sep()
+        self.session = t.session
+        self.headers = t.headers
+
+    @classmethod
+    def _read_info_from_file(cls):
+        with codecs.open(r'./private.txt', "r", "utf-8") as f:
+            save_base_path = None
+            for i, line in enumerate(f):
+                if i < 2: continue
+                save_base_path = line.strip()
+        return save_base_path
 
     def _get_course_page(self):
         # 从sep中获取Identity Key来登录课程系统，并获取课程信息
@@ -117,12 +132,9 @@ class UCASCourse(object):
             print('{dic_name}  >> {sub_directory}{filename}   Download success'.format(**locals()))
 
     def start(self):
-        try:
-            self._parse_course_list()
-            self._get_all_resource_url()
-            self._start_download()
-        except ValueError as e:
-            print(e, '请检查private文件')
+        self._parse_course_list()
+        self._get_all_resource_url()
+        self._start_download()
 
 
 if __name__ == '__main__':

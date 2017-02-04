@@ -1,23 +1,14 @@
 # -*- coding: utf-8 -*-
 # @Date    : 2017/2/1
 # @Author  : hrwhisper
-import codecs
 import time
-from MyOCR import image_to_string
 import requests
-
-
-def read_file():
-    with codecs.open(r'./private', "r", "utf-8") as f:
-        res = f.read().split("\n")
-        username, password, save_path = list(map(lambda x: x.strip(), res))
-    return username, password, save_path
+from MyOCR import image_to_string
 
 
 class LoginUCAS(object):
-    username, password, save_base_path = read_file()
-
     def __init__(self, vercode_save_name='certCode.jpg'):
+        self.username, self.password = LoginUCAS._read_username_and_password()
         self.cnt = 0
         self.__BEAUTIFULSOUPPARSE = 'html5lib'  # or use 'lxml'
         self.session = requests.session()
@@ -31,6 +22,19 @@ class LoginUCAS(object):
             "Accept-Language": "zh-CN,zh;q=0.8,en-US;q=0.6,en;q=0.4",
         }
         self.vercode_save_name = vercode_save_name
+
+    @classmethod
+    def _read_username_and_password(cls):
+        with open("./private.txt") as f:
+            username = password = None
+            for i, line in enumerate(f):
+                if i == 0:
+                    username = line.strip()
+                elif i == 1:
+                    password = line.strip()
+                else:
+                    break
+        return username, password
 
     def _download_verification_code(self):
         r = self.session.get('http://sep.ucas.ac.cn/changePic', stream=True, headers=self.headers)
@@ -58,7 +62,8 @@ class LoginUCAS(object):
         }
         html = self.session.post(url, data=post_data, headers=self.headers).text
         if html.find('密码错误') != -1:
-            raise ValueError('用户名或者密码错误')
+            print('用户名或者密码错误，请检查private文件')
+            exit(1)
         elif html.find('验证码错误') != -1:
             time.sleep(2)
             self.cnt += 1
@@ -69,6 +74,7 @@ class LoginUCAS(object):
 
 if __name__ == '__main__':
     pass
+    # LoginUCAS().login_sep()
     # total = 0
     # test_num = 50
     # for i in range(test_num):

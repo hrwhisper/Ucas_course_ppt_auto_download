@@ -5,7 +5,6 @@
 import os
 import re
 import subprocess
-
 from PIL import Image
 
 devnull = open(os.devnull, 'w')
@@ -17,7 +16,7 @@ def pre_process(func):
         image = Image.open(filename).point(lambda p: 255 if p > 127 else 0).convert("1")
         w, h = image.size
         image = image.crop((cut_size, cut_size, w - cut_size, h - cut_size))
-        save_name = filename + '1.jpg'
+        save_name = filename  # + '1.jpg'
         image.save(save_name)
         res = func(save_name)
         os.remove(save_name)
@@ -33,5 +32,5 @@ def image_to_string(img):
 
 
 if __name__ == '__main__':
-    print(image_to_string('certCode.jpg'))
-    print(image_to_string('certCode2.jpg'))
+    print(image_to_string('ucas_code1.jpg'))
+    print(image_to_string('ucas_code2.jpg'))
