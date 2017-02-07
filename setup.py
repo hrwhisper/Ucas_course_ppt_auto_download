@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# A very simple setup script to create a single executable
+# An advanced setup script to create multiple executables and demonstrate a few
+# of the features available to setup scripts
 #
 # hello.py is a very simple 'Hello, world' type script which also displays the
 # environment in which the script runs
@@ -10,14 +11,26 @@
 # If everything works well you should find a subdirectory in the build
 # subdirectory that contains the files needed to run the script without Python
 
+import sys
 from cx_Freeze import setup, Executable
 
+options = {
+    'build_exe': {
+        'includes': [
+            'LoginUCAS',
+            'MyOCR'
+        ],
+        'path': sys.path + ['modules']
+    }
+}
+
 executables = [
-    Executable('main.py')
+    Executable('main.py'),
 ]
 
-setup(name='hello',
+setup(name='advanced_cx_Freeze_sample',
       version='0.1',
-      description='Sample cx_Freeze script',
+      description='Advanced sample cx_Freeze script',
+      options=options,
       executables=executables
       )
