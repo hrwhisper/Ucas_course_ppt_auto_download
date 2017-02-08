@@ -137,6 +137,7 @@ class UCASCourse(object):
         self._start_download()
 
 
+
 if __name__ == '__main__':
     start = datetime.now()
     s = UCASCourse()
