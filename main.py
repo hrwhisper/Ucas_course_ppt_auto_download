@@ -16,7 +16,8 @@ from LoginUCAS import LoginUCAS
 class UCASCourse(object):
     def __init__(self, time_out=5):
         self.__BEAUTIFULSOUPPARSE = 'html5lib'  # or use 'lxml'
-        self.save_base_path = UCASCourse._read_info_from_file()
+        self.semester = None
+        self.save_base_path, self.semester = UCASCourse._read_info_from_file()
         self.session = None
         self.headers = None
         self._init_session()
@@ -33,11 +34,14 @@ class UCASCourse(object):
     @classmethod
     def _read_info_from_file(cls):
         with codecs.open(r'./private.txt', "r", "utf-8") as f:
-            save_base_path = None
+            save_base_path = semester = None
             for i, line in enumerate(f):
                 if i < 2: continue
-                save_base_path = line.strip()
-        return save_base_path
+                if i == 2:
+                    save_base_path = line.strip()
+                if i == 3:
+                    semester = line.strip()
+        return save_base_path, semester
 
     def _get_course_page(self):
         # 从sep中获取Identity Key来登录课程系统，并获取课程信息
@@ -75,6 +79,7 @@ class UCASCourse(object):
         tds = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find_all('td')
         if not source_name:
             source_name = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('h2').text
+            if self.semester and source_name.find(self.semester) == -1: return # download only current semester
         res = set()
         for td in tds:
             url = td.find('a')
@@ -135,7 +140,6 @@ class UCASCourse(object):
         self._parse_course_list()
         self._get_all_resource_url()
         self._start_download()
-
 
 
 if __name__ == '__main__':
