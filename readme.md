@@ -6,7 +6,7 @@
 
 ### 小白用户
 
-该方法直接运行exe文件，exe文件可以在https://github.com/hrwhisper/Ucas_course_ppt_auto_download/releases中下载
+该方法直接运行exe文件，exe文件可以在https://github.com/hrwhisper/Ucas_course_ppt_auto_download/releases 中下载
 
 修改**private.txt**文件，然后运行main.exe即可。
 
@@ -67,6 +67,7 @@ private中，各行表示意义如下：
 
 ## 更新说明
 - 支持最新验证码登录
+- 自定义当前学期，只下载当前学期的课程PPT
 - 修复文件夹判断问题（有的老师课件命名没有'.'）
 - 添加EXE执行程序（使用 PyInstaller 打包）
 - 修复课件名称含有空格导致解析失败问题
