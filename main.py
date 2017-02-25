@@ -79,7 +79,7 @@ class UCASCourse(object):
         tds = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find_all('td')
         if not source_name:
             source_name = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('h2').text
-            if self.semester and source_name.find(self.semester) == -1: return # download only current semester
+            if self.semester and source_name.find(self.semester) == -1: return  # download only current semester
         res = set()
         for td in tds:
             url = td.find('a')
