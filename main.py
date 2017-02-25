@@ -128,13 +128,16 @@ class UCASCourse(object):
                 print('Error-----------文件下载失败,服务器长时间无响应: ', save_path)
 
             size_mb = int(r.headers.get('Content-Length')) / (1024 ** 2)
-            print('Start download {dic_name}  >> {sub_directory}{filename}  {size_mb:.2f}MB'.format(**locals()))
-            with open(save_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=1024):
-                    if chunk:  # filter out keep-alive new chunks
-                        f.write(chunk)
-                        f.flush()
-            print('{dic_name}  >> {sub_directory}{filename}   Download success'.format(**locals()))
+            try:
+                print('Start download {dic_name}  >> {sub_directory}{filename}  {size_mb:.2f}MB'.format(**locals()))
+                with open(save_path, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=1024):
+                        if chunk:  # filter out keep-alive new chunks
+                            f.write(chunk)
+                            f.flush()
+                print('{dic_name}  >> {sub_directory}{filename}   Download success'.format(**locals()))
+            except UnicodeEncodeError:
+                print('{dic_name}  >> {sub_directory} Download a file'.format(**locals()))
 
     def start(self):
         self._parse_course_list()

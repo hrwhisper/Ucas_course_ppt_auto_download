@@ -51,22 +51,28 @@ class LoginUCAS(object):
                     f.flush()
         return self.vercode_save_name
 
+    def _need_verification_code(self):
+        r = self.session.get('http://sep.ucas.ac.cn/')
+        return r.text.find('验证码') != -1
+
     def login_sep(self):
         # 登录sep
         if not self.cnt:
             print('Login....')
         url = "http://sep.ucas.ac.cn/slogin"
         try:
-            cert_code = image_to_string(self._download_verification_code())
-            while not cert_code or len(cert_code) < 4:
-                cert_code = image_to_string(self._download_verification_code())
             post_data = {
                 "userName": self.username,
                 "pwd": self.password,
                 "sb": "sb",
-                "certCode": cert_code,
                 "rememberMe": 1,
             }
+            if self._need_verification_code():
+                cert_code = image_to_string(self._download_verification_code())
+                while not cert_code or len(cert_code) < 4:
+                    cert_code = image_to_string(self._download_verification_code())
+                    post_data["certCode"] = cert_code
+
             html = self.session.post(url, data=post_data, headers=self.headers).text
             if html.find('密码错误') != -1:
                 print('用户名或者密码错误，请检查private文件')
