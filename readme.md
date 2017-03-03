@@ -58,12 +58,9 @@ private中，各行表示意义如下：
 
 ## 其它
 
-暂时没有android / IOS的计划。
-
-建议云盘如OneDrive连用，这样在电脑上下载到OneDrive文件夹中，手机上也可以收到。
-
-
-
+- 暂时没有android / IOS的计划。
+- 建议云盘如OneDrive连用，这样在电脑上下载到OneDrive文件夹中，手机上也可以收到。
+- **觉得好用点个star吧~**
 
 ## 更新说明
 - 修复因为微软CMD下编码不一致导致程序crash
