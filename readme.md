@@ -40,15 +40,15 @@ private中，各行表示意义如下：
 - python 3.5.2
 - requests 2.11
 - BeautifulSoup
+- PIL
 - 可选环境：
   - Tesseract-OCR
-  - PIL
 
 ### 安装方法
 - pip install beautifulsoup4
 - pip install requests
+- pip install Pillow
 - 登录网址默认为 http://onestop.ucas.ac.cn/home/index ，如果为 sep.ucas.as.cn 那么需要在安装如下环境：
-  - pip install Pillow
   - Tesseract-OCR
     - windows下安装：http://digi.bib.uni-mannheim.de/tesseract/tesseract-ocr-setup-3.05.00dev.exe
       - 安装时候勾选Registry settings
