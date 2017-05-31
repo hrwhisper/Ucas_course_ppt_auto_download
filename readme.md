@@ -12,7 +12,6 @@
 
 ps: 
 
-- **需要安装Tesseract-OCR**，见下方环境要求-安装方法
 - private.txt与main.exe在**同一目录**下即可
 
 
@@ -41,17 +40,19 @@ private中，各行表示意义如下：
 - python 3.5.2
 - requests 2.11
 - BeautifulSoup
-- Tesseract-OCR
-- PIL
+- 可选环境：
+  - Tesseract-OCR
+  - PIL
 
 ### 安装方法
 - pip install beautifulsoup4
 - pip install requests
-- pip install Pillow
-- **Tesseract-OCR**
-  - windows下安装：http://digi.bib.uni-mannheim.de/tesseract/tesseract-ocr-setup-3.05.00dev.exe
-    - 安装时候勾选Registry settings
-  - Linux  \  MAC OS X安装见 https://github.com/tesseract-ocr/tesseract/wiki
+- 登录网址默认为http://onestop.ucas.ac.cn/home/index，如果为sep.ucas.as.cn那么需要在安装如下环境：
+  - pip install Pillow
+  - Tesseract-OCR
+    - windows下安装：http://digi.bib.uni-mannheim.de/tesseract/tesseract-ocr-setup-3.05.00dev.exe
+      - 安装时候勾选Registry settings
+    - Linux  \  MAC OS X安装见 https://github.com/tesseract-ocr/tesseract/wiki
 
 
 
@@ -66,9 +67,11 @@ private中，各行表示意义如下：
 
 
 ## 更新说明
+- 新增登陆网址，不用验证码
 - 修复因为微软CMD下编码不一致导致程序crash
 - 支持最新验证码登录（校内校外不一致）
   - 校内不需要验证码，校外需要
+- 多线程下载
 - 自定义当前学期，只下载当前学期的课程PPT
 - 修复文件夹判断问题（有的老师课件命名没有'.'）
 - 添加EXE执行程序（使用 PyInstaller 打包）

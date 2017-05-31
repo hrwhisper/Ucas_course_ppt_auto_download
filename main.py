@@ -112,10 +112,9 @@ class UCASCourse(object):
         # 下载文件
         dic_name, sub_directory, url = param
         save_path = self.save_base_path + '/' + dic_name + '/' + sub_directory
-        if self.lock.acquire():
+        with self.lock:
             if not os.path.exists(save_path):  # To create directory
                 os.makedirs(save_path)
-            self.lock.release()
 
         filename = url.split('/')[-1]
         save_path += '/' + filename
