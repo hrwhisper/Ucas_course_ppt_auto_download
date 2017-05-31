@@ -47,7 +47,7 @@ private中，各行表示意义如下：
 ### 安装方法
 - pip install beautifulsoup4
 - pip install requests
-- 登录网址默认为http://onestop.ucas.ac.cn/home/index，如果为sep.ucas.as.cn那么需要在安装如下环境：
+- 登录网址默认为 http://onestop.ucas.ac.cn/home/index ，如果为 sep.ucas.as.cn 那么需要在安装如下环境：
   - pip install Pillow
   - Tesseract-OCR
     - windows下安装：http://digi.bib.uni-mannheim.de/tesseract/tesseract-ocr-setup-3.05.00dev.exe
