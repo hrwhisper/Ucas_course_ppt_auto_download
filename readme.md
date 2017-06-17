@@ -8,7 +8,7 @@
 
 该方法直接运行exe文件，exe文件可以在https://github.com/hrwhisper/Ucas_course_ppt_auto_download/releases 中下载
 
-修改**private.txt**文件，然后运行main.exe即可。
+修改**private.txt**文件，然后运行main.exe即可(建议使用PowerShell运行)。
 
 ps: 
 
@@ -48,7 +48,7 @@ private中，各行表示意义如下：
 - pip install beautifulsoup4
 - pip install requests
 - pip install Pillow
-- 登录网址默认为 http://onestop.ucas.ac.cn/home/index ，如果为 sep.ucas.as.cn 那么需要在安装如下环境：
+- 登录网址默认为 http://onestop.ucas.ac.cn/home/index ，如果为这个网站挂了，将使用sep.ucas.as.cn 登录，当你在校外的时候那么需要在安装如下环境以支持验证码识别：
   - Tesseract-OCR
     - windows下安装：http://digi.bib.uni-mannheim.de/tesseract/tesseract-ocr-setup-3.05.00dev.exe
       - 安装时候勾选Registry settings
