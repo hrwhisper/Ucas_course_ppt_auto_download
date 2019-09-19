@@ -33,7 +33,8 @@ class UCASCourse(object):
 
     @classmethod
     def _read_info_from_file(cls):
-        with codecs.open(r'./private.txt', "r", "utf-8") as f:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        with codecs.open(os.path.join(base_path, 'private.txt'), "r", "utf-8") as f:
             save_base_path = semester = None
             for i, line in enumerate(f):
                 if i < 2: continue
