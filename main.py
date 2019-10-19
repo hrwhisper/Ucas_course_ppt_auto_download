@@ -15,7 +15,7 @@ from LoginUCAS import LoginUCAS
 
 class UCASCourse(object):
     def __init__(self, time_out=5):
-        self.__BEAUTIFULSOUPPARSE = 'html5lib'  # or use 'lxml'
+        self.__BEAUTIFULSOUPPARSE = 'html.parser'  # or use 'lxml'
         self.semester = None
         self.save_base_path, self.semester = UCASCourse._read_info_from_file()
         self.session = None
@@ -33,7 +33,7 @@ class UCASCourse(object):
 
     @classmethod
     def _read_info_from_file(cls):
-        with codecs.open(r'./private.txt', "r", "utf-8") as f:
+        with codecs.open('./private.txt', "r", "utf-8") as f:
             save_base_path = semester = None
             for i, line in enumerate(f):
                 if i < 2: continue
@@ -52,20 +52,13 @@ class UCASCourse(object):
         url = "http://course.ucas.ac.cn/portal/plogin?Identity=" + code
         self.headers['Host'] = "course.ucas.ac.cn"
         html = self.session.get(url, headers=self.headers).text
-        url = 'http://course.ucas.ac.cn' + \
-              BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('frame', title='mainFrame')['src']
-        html = self.session.get(url, headers=self.headers).text
-        url = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('a', class_='icon-sakai-membership')['href']
-        html = self.session.get(url, headers=self.headers).text
-        url = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('iframe')['src']
-        html = self.session.get(url, headers=self.headers).text
         return html
 
     def _parse_course_list(self):
         # 获取课程的所有URL
         html = self._get_course_page()
         self.course_list = ['http://course.ucas.ac.cn/portal/site/' + x for x in
-                            re.findall(r'http://course.ucas.ac.cn/portal/site/([\S]+)"', html)]
+                            re.findall(r'http://course.ucas.ac.cn/portal/site/([\d]+)"', html)]
 
     def _get_all_resource_url(self):
         # 从课程的所有URL中获取对应的所有课件
@@ -76,9 +69,9 @@ class UCASCourse(object):
 
     def _get_resource_url(self, base_url, _path='', source_name=None):
         html = self.session.get(base_url, headers=self.headers).text
-        tds = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find_all('td')
+        tds = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find_all('li')
         if not source_name:
-            source_name = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('h2').text
+            source_name = BeautifulSoup(html, self.__BEAUTIFULSOUPPARSE).find('h3').text
             if self.semester and source_name.find(self.semester) == -1: return  # download only current semester
         res = set()
         for td in tds:
@@ -86,7 +79,9 @@ class UCASCourse(object):
             if not url: continue
             url = urllib.parse.unquote(url['href'])
             if url == '../': continue
-            if 'Folder' in td.text:  # directory
+            # if 'Folder' in td.text:  # directory
+            if 'folder' in td.attrs['class']:  # directory
+                # folder_name = td.text
                 self._get_resource_url(base_url + url, _path + '/' + url, source_name)
             if url.startswith('http:__'):  # Fix can't download when given a web link. eg: 计算机算法分析与设计
                 try:
@@ -126,7 +121,11 @@ class UCASCourse(object):
             except requests.exceptions.ConnectionError as e:
                 print('Error-----------文件下载失败,服务器长时间无响应: ', save_path)
 
-            size_mb = int(r.headers.get('Content-Length')) / (1024 ** 2)
+            try:
+                # HTML file does not have Content Length attr
+                size_mb = int(r.headers.get('Content-Length')) / (1024 ** 2)
+            except TypeError:
+                size_mb = 0.33  # html文件直接指定大小 :)
             try:
                 print('Start download {dic_name}  >> {sub_directory}{filename}  {size_mb:.2f}MB'.format(**locals()))
                 with open(save_path, 'wb') as f:
@@ -145,6 +144,8 @@ class UCASCourse(object):
 
 
 if __name__ == '__main__':
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(base_path)
     start = datetime.now()
     s = UCASCourse()
     s.start()

@@ -74,7 +74,7 @@ class LoginUCAS(object):
 
     @classmethod
     def _read_username_and_password(cls):
-        with codecs.open(r'./private.txt', "r", 'utf-8') as f:
+        with codecs.open('./private.txt', "r", "utf-8") as f:
             username = password = None
             for i, line in enumerate(f):
                 if i == 0:
